@@ -216,17 +216,24 @@ function App() {
 
   // ---- Delete employee ----
   const handleDeleteConfirm = async (id) => {
+    // Optimistic update
+    setEmployees(prev => prev.filter(emp => emp.id !== id))
+    
     const { error } = await supabase.from('Employee').delete().eq('id', id)
     if (error) {
       showToast('Lỗi khi xóa nhân viên!', 'error')
+      // Revert if error
+      fetchEmployees()
     } else {
       showToast('Đã xóa nhân viên thành công ✓')
-      fetchEmployees()
     }
   }
 
   // ---- Update employee name ----
   const handleEditConfirm = async (id, newName) => {
+    // Optimistic update
+    setEmployees(prev => prev.map(emp => emp.id === id ? { ...emp, name: newName } : emp))
+    
     const { error } = await supabase
       .from('Employee')
       .update({ name: newName })
@@ -234,9 +241,10 @@ function App() {
 
     if (error) {
       showToast('Lỗi khi cập nhật thông tin!', 'error')
+      // Revert if error
+      fetchEmployees()
     } else {
       showToast('Cập nhật tên thành công ✓')
-      fetchEmployees()
     }
   }
 
