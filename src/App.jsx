@@ -219,9 +219,12 @@ function App() {
     // Optimistic update
     setEmployees(prev => prev.filter(emp => emp.id !== id))
     
-    const { error } = await supabase.from('Employee').delete().eq('id', id)
-    if (error) {
-      showToast('Lỗi khi xóa nhân viên!', 'error')
+    // Sử dụng .select() để lấy về dòng đã bị xóa thực tế
+    const { data, error } = await supabase.from('Employee').delete().eq('id', id).select()
+    
+    // Nếu bị lỗi mạng HOẶC Supabase không cho phép xóa (RLS), data sẽ rỗng []
+    if (error || !data || data.length === 0) {
+      showToast('Lỗi! (Có thể do quyền truy cập RLS trên Supabase)', 'error')
       // Revert if error
       fetchEmployees()
     } else {
@@ -234,13 +237,16 @@ function App() {
     // Optimistic update
     setEmployees(prev => prev.map(emp => emp.id === id ? { ...emp, name: newName } : emp))
     
-    const { error } = await supabase
+    // Sử dụng .select() để lấy về dòng đã cập nhật thực tế
+    const { data, error } = await supabase
       .from('Employee')
       .update({ name: newName })
       .eq('id', id)
+      .select()
 
-    if (error) {
-      showToast('Lỗi khi cập nhật thông tin!', 'error')
+    // Nếu bị lỗi mạng HOẶC Supabase không cho phép cập nhật (RLS), data sẽ rỗng []
+    if (error || !data || data.length === 0) {
+      showToast('Lỗi! (Có thể do quyền truy cập RLS trên Supabase)', 'error')
       // Revert if error
       fetchEmployees()
     } else {
